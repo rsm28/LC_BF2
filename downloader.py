@@ -127,6 +127,38 @@ def fetch_modpacks():
     process_modpack(modpack)
     extract()
 
+def config_download():
+    print("Downloading and applying custom config files...")
+    config_temp_dir = f"{MOD_DOWNLOAD_PATH}/config-temp"
+    bepinex_config_dir = "BepInEx/config"
+
+    # Create temporary directory for downloading and extracting configs
+    if not os.path.exists(config_temp_dir):
+        os.makedirs(config_temp_dir)
+
+    # Download the zip file from the GitHub repository
+    config_zip_url = 'https://github.com/rsm28/LC_BF2/archive/refs/heads/main.zip'
+    config_zip_path = os.path.join(config_temp_dir, 'main.zip')
+    print("Downloading config files...")
+    response = requests.get(config_zip_url)
+    with open(config_zip_path, 'wb') as f:
+        f.write(response.content)
+
+    # Extract the zip file
+    print("Extracting config files...")
+    with zipfile.ZipFile(config_zip_path, 'r') as zip_ref:
+        zip_ref.extractall(config_temp_dir)
+
+    # Copy the config files to the BepInEx config directory
+    source_config_dir = os.path.join(config_temp_dir, 'LC_BF2-main', 'config')
+    if os.path.exists(source_config_dir):
+        print("Copying config files to BepInEx config directory...")
+        shutil.copytree(source_config_dir, bepinex_config_dir, dirs_exist_ok=True)
+
+    # Remove the temporary directory
+    shutil.rmtree(config_temp_dir)
+    print("Custom config files applied successfully.")
+
 def extract():
     # THE BIG BOY FUNCTION THAT DEALS WITH ALL SHIT MOD AUTHORS
     # 1. if a folder called "BepInEx" exists, we merge it, going from MOD_DOWNLOAD_PATH, and merging it with the one in the root folder (in essence, MOD_DOWNLOAD_PATH\BepInEx merges with <root directory>\BepInEx)
@@ -168,4 +200,5 @@ if __name__ == "__main__":
     clear_mod_downloads()
     download_and_setup_bepinex()
     fetch_modpacks()
+    config_download()
 
