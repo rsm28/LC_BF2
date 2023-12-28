@@ -4,3 +4,5 @@
 run run.bat inside your lethal company root folder
 
 if your shit breaks i don't care don't come to me
+
+anyway birthday programming is ass but this was ocming
