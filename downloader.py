@@ -50,11 +50,12 @@ def download_mod(author, mod, version):
         zip_ref.extractall(f"{MOD_DOWNLOAD_PATH}/")
     clear_mod_downloads()
     
+
 def process_modpack(modpack):
     authors = []
     mods = []
     versions = []
-    with open("modpacks/modpack.txt", "r") as file:
+    with open(f"modpacks/{modpack}.txt", "r") as file:
         for line in file:
             author, mod, version = line.strip().split("-")
             authors.append(author)
@@ -83,9 +84,39 @@ def download_and_setup_bepinex():
     process = subprocess.Popen(["Lethal Company.exe"])
     time.sleep(5)
     process.terminate()
-    
+
     if os.path.isfile("BepInExPack_5.4.2100.zip"):
         os.remove("BepInExPack_5.4.2100.zip")
+
+def fetch_modpacks():
+    user = 'rsm28'
+    repo = 'LC_BF2'
+    response = requests.get(f"https://api.github.com/repos/{user}/{repo}/contents/modpacks")
+    response.raise_for_status()  # Ensure we got a successful response
+
+    modpacks = [item['name'].replace('.txt', '') for item in response.json()]
+
+    print("----------------------- MODPACKS -----------------------")
+    for i, modpack in enumerate(modpacks, start=1):
+        print(f"{i}) {modpack}")
+    print("----------------------- MODPACKS -----------------------")
+
+    modpack = input("Enter the EXACT NAME of the modpack you want to install: ")
+
+    if modpack in modpacks:
+        print(f"Downloading {modpack}...")
+        modpack_url = f"https://raw.githubusercontent.com/{user}/{repo}/main/modpacks/{modpack}.txt"
+        response = requests.get(modpack_url)
+        response.raise_for_status()  # Ensure we got a successful response
+
+        with open(f"./modpacks/{modpack}.txt", 'w') as f:
+            f.write(response.text)
+    else:
+        print(f"Modpack '{modpack}' does not exist. Exiting...")
+        exit(1)
+
+    process_modpack(modpack)
+    extract()
 
 def extract():
     # THE BIG BOY FUNCTION THAT DEALS WITH ALL SHIT MOD AUTHORS
@@ -105,8 +136,8 @@ def extract():
         # Merge it with the one in the root directory
         shutil.copytree(os.path.join(mod_download_path, "BepInEx"), bepinex_dir, dirs_exist_ok=True)
     else:
-        # Check for plugins, config, patchers folders
-        for folder in ["plugins", "config", "patchers"]:
+        # Check for internal BepInEx folders
+        for folder in ["plugins", "config", "patchers", "core", "cache", "Lang", "Bundles"]:
             if os.path.isdir(os.path.join(mod_download_path, folder)):
                 # Merge them with the corresponding folders in the root directory
                 shutil.copytree(os.path.join(mod_download_path, folder), os.path.join(bepinex_dir, folder), dirs_exist_ok=True)
@@ -117,7 +148,6 @@ def extract():
                 if file.endswith(".dll"):
                     shutil.move(os.path.join(mod_download_path, file), os.path.join(bepinex_dir, "plugins"))
    
-    
 
 if not os.path.exists(MOD_DOWNLOAD_PATH):
     os.makedirs(MOD_DOWNLOAD_PATH)
@@ -128,5 +158,5 @@ if __name__ == "__main__":
     clear_old_bepinex()
     clear_mod_downloads()
     download_and_setup_bepinex()
-    process_modpack("modpack.txt")
+    fetch_modpacks()
 
