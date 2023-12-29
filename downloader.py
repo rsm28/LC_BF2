@@ -68,6 +68,7 @@ def download_mod(author, mod, version):
     with zipfile.ZipFile(download_path, 'r') as zip_ref:
         zip_ref.extractall(f"{MOD_DOWNLOAD_PATH}/")
     print(f"Extraction complete: {mod} version {version}")
+    extract()
     clear_mod_downloads()
 
 def process_modpack(modpack):
@@ -95,7 +96,7 @@ def process_modpack(modpack):
 
 def download_and_setup_bepinex():
     """
-    Downloads and sets up BepInEx by downloading the BepInExPack, extracting it, and launching the game.
+    Downloads and sets up BepInEx by downloading the BepInExPack, extracting it, and moving its contents to the root directory.
     """
     print("Downloading and extracting BepInExPack...")
     response = requests.get('https://thunderstore.io/package/download/BepInEx/BepInExPack/5.4.2100/')
@@ -109,9 +110,20 @@ def download_and_setup_bepinex():
         zip_ref.extractall(".")
     print("BepInExPack extracted.")
 
+    time.sleep(5)
+    # Move files and directories of BepInExPack to root directory
+    bepinex_pack_dir = "BepInExPack"
+    if os.path.exists(bepinex_pack_dir):
+        print(bepinex_pack_dir)
+        for item in os.listdir(bepinex_pack_dir):
+            item_path = os.path.join(bepinex_pack_dir, item)
+            shutil.move(item_path, ".")
+        os.rmdir(bepinex_pack_dir)  # Remove the now-empty BepInExPack directory
+        print("Moved BepInExPack contents to the root directory.")
+
     print("Launching LC to install BepInEx...")
     process = subprocess.Popen(["Lethal Company.exe"])
-    time.sleep(5)
+    time.sleep(10)
     process.terminate()
     print("LC launched and terminated to install BepInEx.")
 
@@ -149,7 +161,6 @@ def fetch_modpacks():
         exit(1)
 
     process_modpack(modpack)
-    extract()
 
 def config_download():
     """
@@ -187,10 +198,44 @@ def config_download():
     print("Custom config files applied successfully.")
 
 def extract():
-    """
-    Extracts and merges mod files into the BepInEx directory structure.
-    """
-    # Function implementation remains unchanged
+    # THE BIG BOY FUNCTION THAT DEALS WITH ALL SHIT MOD AUTHORS
+    # 1. if a folder called "BepInEx" exists, we merge it, going from MOD_DOWNLOAD_PATH, and merging it with the one in the root folder (in essence, MOD_DOWNLOAD_PATH\BepInEx merges with <root directory>\BepInEx)
+    # 2. if "BepInEx" does NOT exist, we do one of the following:
+        # 2a. if "plugins" exists, merge it with <root directory>\BepInEx\plugins
+        # 2b. if "config" exists, do the same as 2a, but for config
+        # 2c. if "patchers" exists, do the same as 2a, but for patchers
+        # 2d. if NO folders exist, we do these two things:
+            #2da. move all .dll folders into <root directory>\BepInEx\plugins
+    time.sleep(3)
+    print("---------- extract ----------")
+    root_dir = os.getcwd()
+    bepinex_dir = os.path.join(root_dir, "BepInEx")
+    mod_download_path = os.path.join(root_dir, MOD_DOWNLOAD_PATH)
+
+    # Check if BepInEx folder exists in mod downloads
+    if os.path.isdir(os.path.join(mod_download_path, "BepInEx")):
+        # Merge it with the one in the root directory
+        shutil.copytree(os.path.join(mod_download_path, "BepInEx"), bepinex_dir, dirs_exist_ok=True)
+    else:
+        # Check for internal BepInEx folders
+        for folder in ["plugins", "config", "patchers", "core", "cache", "Lang", "Bundles"]:
+            if os.path.isdir(os.path.join(mod_download_path, folder)):
+                # Merge them with the corresponding folders in the root directory
+                shutil.copytree(os.path.join(mod_download_path, folder), os.path.join(bepinex_dir, folder), dirs_exist_ok=True)
+
+        # If no folders exist, move all .dll files into BepInEx/plugins
+        if not any(os.path.isdir(os.path.join(mod_download_path, folder)) for folder in os.listdir(mod_download_path)):
+            for file in os.listdir(mod_download_path):
+                if file.endswith(".dll"):
+                    shutil.move(os.path.join(mod_download_path, file), os.path.join(bepinex_dir, "plugins"))
+                    print(f"Moved {file} to {os.path.join(bepinex_dir, 'plugins')}")
+                # exceptions/edge cases:
+                # NEEDYCATS
+                if file == "names.txt":
+                    shutil.move(os.path.join(mod_download_path, file), os.path.join(bepinex_dir, "plugins"))
+    print("---------- extract ----------")
+    
+
 
 if not os.path.exists(MOD_DOWNLOAD_PATH):
     os.makedirs(MOD_DOWNLOAD_PATH)
@@ -198,8 +243,15 @@ if not os.path.exists("modpacks"):
     os.makedirs("modpacks")
 
 if __name__ == "__main__":
+    print("---------- CLEARING OLD BEPINEX FILES ----------")
     clear_old_bepinex()
+    print("---------- CLEARING MOD DOWNLOADS ----------")
     clear_mod_downloads()
+    print("---------- DOWNLOADING AND SETTING UP BEPINEX ----------")
     download_and_setup_bepinex()
+    print("---------- STARTING DOWNLOADS... ----------")
     fetch_modpacks()
+    print("---------- DOWNLOADING CONFIGS ----------")
     config_download()
+    print("---------------------------")
+    print("All done! Launch LC to play.")
