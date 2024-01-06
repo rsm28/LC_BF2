@@ -114,7 +114,6 @@ def download_and_setup_bepinex():
     # Move files and directories of BepInExPack to root directory
     bepinex_pack_dir = "BepInExPack"
     if os.path.exists(bepinex_pack_dir):
-        print(bepinex_pack_dir)
         for item in os.listdir(bepinex_pack_dir):
             item_path = os.path.join(bepinex_pack_dir, item)
             shutil.move(item_path, ".")
@@ -233,7 +232,6 @@ def extract():
                 # NEEDYCATS
                 if file == "names.txt":
                     shutil.move(os.path.join(mod_download_path, file), os.path.join(bepinex_dir, "plugins"))
-    print("---------- extract ----------")
     
 
 
