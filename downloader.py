@@ -155,6 +155,22 @@ def fetch_modpacks():
         with open(f"./modpacks/{modpack}.txt", 'w') as f:
             f.write(response.text)
         print(f"{modpack} downloaded successfully.")
+
+        #download every file from this directory
+        file_path = os.path.join(os.getcwd(), "BepInEx\plugins")
+        response = requests.get(f"https://api.github.com/repos/{user}/{repo}/contents/deps/{modpack}")
+        response.raise_for_status()
+
+        for item in response.json():
+            print(f"Downloading {item['name']}...")
+            response = requests.get(item['download_url'])
+            response.raise_for_status()
+            
+            with open(f"./{item['name']}", 'w') as f:
+                f.write(response.text)
+
+            shutil.move(f"./{item['name']}", f"{file_path}/{item['name']}")
+            print(f"{item['name']} downloaded successfully.")
     else:
         print(f"Modpack '{modpack}' does not exist. Exiting...")
         exit(1)
