@@ -1,0 +1,13 @@
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!downloader.py
+!requirements.txt
+!run.bat
+
+# ...and not these directories
+!deps/
+!configs/
+!modpacks/

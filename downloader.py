@@ -7,6 +7,7 @@ import subprocess
 
 MOD_DOWNLOAD_PATH = "mod_downloads"
 
+
 def clear_mod_downloads():
     """
     Clears all files and directories within the MOD_DOWNLOAD_PATH.
@@ -16,13 +17,12 @@ def clear_mod_downloads():
         for root, dirs, files in os.walk(MOD_DOWNLOAD_PATH):
             for f in files:
                 os.unlink(os.path.join(root, f))
-                print(f"Deleted file: {f}")
             for d in dirs:
                 shutil.rmtree(os.path.join(root, d))
-                print(f"Deleted directory: {d}")
         print("Mod downloads cleared.")
     else:
         print("MOD_DOWNLOAD_PATH does not exist, skipping")
+
 
 def clear_old_bepinex():
     """
@@ -42,6 +42,7 @@ def clear_old_bepinex():
             print(f"Successfully removed the directory {directory}")
     print("Old BepInEx files cleared.")
 
+
 def download_mod(author, mod, version):
     """
     Downloads and extracts a mod from a given author and version.
@@ -50,10 +51,12 @@ def download_mod(author, mod, version):
     :param mod: The name of the mod.
     :param version: The version of the mod.
     """
-    print(f"Preparing to download {mod} version {version} from author {author}...")
+    print(
+        f"Preparing to download {mod} version {version} from author {author}...")
     if mod == "LC_API":
         version = "2.2.0"
-        print(f"Version override: Downloading {mod} version {version} instead.")
+        print(
+            f"Version override: Downloading {mod} version {version} instead.")
 
     webrequest_url = f"https://thunderstore.io/package/download/{author}/{mod}/{version}/"
     print(f"Downloading from URL: {webrequest_url}")
@@ -70,6 +73,7 @@ def download_mod(author, mod, version):
     print(f"Extraction complete: {mod} version {version}")
     extract()
     clear_mod_downloads()
+
 
 def process_modpack(modpack):
     """
@@ -94,12 +98,14 @@ def process_modpack(modpack):
         download_mod(authors[i], mods[i], versions[i])
     print(f"Modpack {modpack} processed successfully.")
 
+
 def download_and_setup_bepinex():
     """
     Downloads and sets up BepInEx by downloading the BepInExPack, extracting it, and moving its contents to the root directory.
     """
     print("Downloading and extracting BepInExPack...")
-    response = requests.get('https://thunderstore.io/package/download/BepInEx/BepInExPack/5.4.2100/')
+    response = requests.get(
+        'https://thunderstore.io/package/download/BepInEx/BepInExPack/5.4.2100/')
     download_path = "BepInExPack_5.4.2100.zip"
     with open(download_path, 'wb') as f:
         f.write(response.content)
@@ -117,7 +123,8 @@ def download_and_setup_bepinex():
         for item in os.listdir(bepinex_pack_dir):
             item_path = os.path.join(bepinex_pack_dir, item)
             shutil.move(item_path, ".")
-        os.rmdir(bepinex_pack_dir)  # Remove the now-empty BepInExPack directory
+        # Remove the now-empty BepInExPack directory
+        os.rmdir(bepinex_pack_dir)
         print("Moved BepInExPack contents to the root directory.")
 
     print("Launching LC to install BepInEx...")
@@ -130,6 +137,7 @@ def download_and_setup_bepinex():
         os.remove(download_path)
         print(f"Cleanup: Removed {download_path}")
 
+
 def fetch_modpacks():
     """
     Fetches the list of modpacks from a GitHub repository and allows the user to select and download one.
@@ -137,7 +145,8 @@ def fetch_modpacks():
     print("Fetching list of modpacks from GitHub...")
     user = 'rsm28'
     repo = 'LC_BF2'
-    response = requests.get(f"https://api.github.com/repos/{user}/{repo}/contents/modpacks")
+    response = requests.get(
+        f"https://api.github.com/repos/{user}/{repo}/contents/modpacks")
     response.raise_for_status()
 
     modpacks = [item['name'].replace('.txt', '') for item in response.json()]
@@ -145,7 +154,8 @@ def fetch_modpacks():
     for i, modpack in enumerate(modpacks, start=1):
         print(f"{i}) {modpack}")
 
-    modpack = input("Enter the EXACT NAME of the modpack you want to install: ")
+    modpack = input(
+        "Enter the EXACT NAME of the modpack you want to install: ")
     if modpack in modpacks:
         print(f"Downloading {modpack}...")
         modpack_url = f"https://raw.githubusercontent.com/{user}/{repo}/main/modpacks/{modpack}.txt"
@@ -156,16 +166,17 @@ def fetch_modpacks():
             f.write(response.text)
         print(f"{modpack} downloaded successfully.")
 
-        #download every file from this directory
+        # download every file from this directory
         file_path = os.path.join(os.getcwd(), "BepInEx\plugins")
-        response = requests.get(f"https://api.github.com/repos/{user}/{repo}/contents/deps/{modpack}")
+        response = requests.get(
+            f"https://api.github.com/repos/{user}/{repo}/contents/deps/{modpack}")
         response.raise_for_status()
 
         for item in response.json():
             print(f"Downloading {item['name']}...")
             response = requests.get(item['download_url'])
             response.raise_for_status()
-            
+
             with open(f"./{item['name']}", 'w') as f:
                 f.write(response.text)
 
@@ -176,6 +187,7 @@ def fetch_modpacks():
         exit(1)
 
     process_modpack(modpack)
+
 
 def config_download():
     """
@@ -206,49 +218,63 @@ def config_download():
     source_config_dir = os.path.join(config_temp_dir, 'LC_BF2-main', 'config')
     if os.path.exists(source_config_dir):
         print("Copying config files to BepInEx config directory...")
-        shutil.copytree(source_config_dir, bepinex_config_dir, dirs_exist_ok=True)
+        shutil.copytree(source_config_dir, bepinex_config_dir,
+                        dirs_exist_ok=True)
 
     # Remove the temporary directory
     shutil.rmtree(config_temp_dir)
     print("Custom config files applied successfully.")
 
+
 def extract():
-    # THE BIG BOY FUNCTION THAT DEALS WITH ALL SHIT MOD AUTHORS
-    # 1. if a folder called "BepInEx" exists, we merge it, going from MOD_DOWNLOAD_PATH, and merging it with the one in the root folder (in essence, MOD_DOWNLOAD_PATH\BepInEx merges with <root directory>\BepInEx)
-    # 2. if "BepInEx" does NOT exist, we do one of the following:
-        # 2a. if "plugins" exists, merge it with <root directory>\BepInEx\plugins
-        # 2b. if "config" exists, do the same as 2a, but for config
-        # 2c. if "patchers" exists, do the same as 2a, but for patchers
-        # 2d. if NO folders exist, we do these two things:
-            #2da. move all .dll folders into <root directory>\BepInEx\plugins
     time.sleep(3)
     print("---------- extract ----------")
     root_dir = os.getcwd()
     bepinex_dir = os.path.join(root_dir, "BepInEx")
     mod_download_path = os.path.join(root_dir, MOD_DOWNLOAD_PATH)
 
-    # Check if BepInEx folder exists in mod downloads
-    if os.path.isdir(os.path.join(mod_download_path, "BepInEx")):
-        # Merge it with the one in the root directory
-        shutil.copytree(os.path.join(mod_download_path, "BepInEx"), bepinex_dir, dirs_exist_ok=True)
-    else:
-        # Check for internal BepInEx folders
-        for folder in ["plugins", "config", "patchers", "core", "cache", "Lang", "Bundles"]:
-            if os.path.isdir(os.path.join(mod_download_path, folder)):
-                # Merge them with the corresponding folders in the root directory
-                shutil.copytree(os.path.join(mod_download_path, folder), os.path.join(bepinex_dir, folder), dirs_exist_ok=True)
+    # Ensure MOD_DOWNLOAD_PATH is defined
+    if not mod_download_path:
+        raise ValueError("MOD_DOWNLOAD_PATH is not defined.")
 
-        # If no folders exist, move all .dll files into BepInEx/plugins
-        if not any(os.path.isdir(os.path.join(mod_download_path, folder)) for folder in os.listdir(mod_download_path)):
+    # List of files to ignore
+    ignore_files = ["CHANGELOG.md", "icon.png", "manifest.json", "README.md"]
+
+    # Dictionary to map specific files to their directories
+    special_files = {
+        "names.txt": "plugins",
+        "Strings_en.xml": "plugins"
+        # Add more special file mappings here if needed
+    }
+
+    try:
+        # Check if BepInEx folder exists in mod downloads
+        if os.path.isdir(os.path.join(mod_download_path, "BepInEx")):
+            # Merge it with the one in the root directory
+            shutil.copytree(os.path.join(mod_download_path,
+                            "BepInEx"), bepinex_dir, dirs_exist_ok=True)
+        else:
+            # Check for internal BepInEx folders
+            for folder in ["plugins", "config", "patchers", "core", "cache", "Lang", "Bundles"]:
+                if os.path.isdir(os.path.join(mod_download_path, folder)):
+                    # Merge them with the corresponding folders in the root directory
+                    shutil.copytree(os.path.join(mod_download_path, folder), os.path.join(
+                        bepinex_dir, folder), dirs_exist_ok=True)
+
+            # Move all .dll files and special files into their respective directories
             for file in os.listdir(mod_download_path):
-                if file.endswith(".dll"):
-                    shutil.move(os.path.join(mod_download_path, file), os.path.join(bepinex_dir, "plugins"))
-                    print(f"Moved {file} to {os.path.join(bepinex_dir, 'plugins')}")
-                # exceptions/edge cases:
-                # NEEDYCATS
-                if file == "names.txt":
-                    shutil.move(os.path.join(mod_download_path, file), os.path.join(bepinex_dir, "plugins"))
-    
+                if file in ignore_files:
+                    continue  # Skip the ignored files
+                elif file.endswith(".dll") or file in special_files:
+                    # Get the target folder from the dictionary, default to "plugins"
+                    target_folder = special_files.get(file, "plugins")
+                    shutil.move(os.path.join(mod_download_path, file),
+                                os.path.join(bepinex_dir, target_folder))
+                    print(
+                        f"Moved {file} to {os.path.join(bepinex_dir, target_folder)}")
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        # Optionally, log the error to a file or error logging service
 
 
 if not os.path.exists(MOD_DOWNLOAD_PATH):
