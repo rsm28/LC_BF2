@@ -243,7 +243,8 @@ def extract():
     # Dictionary to map specific files to their directories
     special_files = {
         "names.txt": "plugins",
-        "Strings_en.xml": "plugins"
+        "Strings_en.xml": "plugins",
+        "yippeemod": "plugins"
         # Add more special file mappings here if needed
     }
 
