@@ -244,7 +244,7 @@ def extract():
     special_files = {
         "names.txt": "plugins",
         "Strings_en.xml": "plugins",
-        "yippeemod": "plugins"
+        "yippeesound": "plugins"
         # Add more special file mappings here if needed
     }
 
